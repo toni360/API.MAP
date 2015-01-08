@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="MapInterfaceDemo"
+  id="myeclipse.1420388871108"
+  context-root="/MapInterfaceDemo"
+  j2ee-spec="6.0"
+  archive="MapInterfaceDemo.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+
