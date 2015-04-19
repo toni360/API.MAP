@@ -1,191 +1,12 @@
 
 #目的
 
-该文档是营销账户平台对外开放接口文档，用于对外开放分期卡的线上开卡、线下开卡、和支付等能力。
+该文档是营销账户平台·线下业务对外开放接口文档，用于对外开放线下开卡、线下消费、线下交易撤销、线下交易冲正和下载产品列表的能力。
 
 
 #接口
 
-##分期卡系列接口
-
-###获取短信验证码接口
-
-在线上开卡前，第三方应用系统可以使用该接口向需要开卡的手机号码发送短信验证码，用于验证手机号码的真实性。
-
-其中中经汇通将会为第三方应用系统分配发送短信的账号和密码，第三方应用系统通过账号和密码进行获取短信验证码。
-
-1）请求说明
-
-http请求方式: post
-
-    http://IP:PORT/front/oilcard/get_smscode
-
-
-
-POST数据格式：JSON
-
-    {
-        "channelNo":"C001", "timeStamp":"TIMESTAMP", "nonce":"NONCE", "signature":"SIGNATURE", "mobileNum":"13912345678"
-    }  
-
-参数|必须|说明
--------|------|-------
-account|是|发送短信帐号
-timeStamp|是|时间戳
-nonce|是|随机数
-signature|是|签名值，MD5(按值的字典顺序排列组合成字符串(channelNo, channelKey, nonce, timeStamp))，channelKey为中经汇通分配，参与MD5运算
-mobileNum|是|需要验证码的手机号码
-
-
-2）返回说明
-
-正常时的返回JSON数据包示例：
-
-    {"errcode":0,"errmsg":"已经发送短信验证码"}
-
-错误时的JSON数据包示例：
-
-    {"errcode":10000,"errmsg":"发送短信验证码失败，其它原因"}
-
-###线上开分期卡接口
-
-该接口仅提供给**联动优势公司和深圳麦圈公司使用**，为用户开通分期卡。
-
-1）请求说明
-
-前置条件：必须先执行获取短信验证码接口
-
-http请求方式: post
-
-    http://IP:PORT/front/oilcard/open?channel=C001
-
-
-POST数据格式：JSON
-
-    {
-        "ID":"515411244445444444X", "name":"李四", "mobileNum":"13912345678", "smsCode":"4567", "channelOrderId":"channel1234567890", "productId":"1010"
-    }
-
-
-参数|必须|说明
-------|------|-------
-channel|是|渠道编码，中经汇通分配
-ID|是|身份证号，要求以渠道秘钥，采用3DES加密后base64编码
-name|是|姓名，要求以渠道秘钥，采用3DES加密后base64编码
-mobileNum|是|开卡手机号码，要求以渠道秘钥，采用3DES加密后base64编码
-smsCode|是|通过短信获取到的验证码
-channelOrderId|是|渠道自定义订单号，用于异常时，查询开卡结果
-productId|否|产品编号，不输入该参数，采用默认卡开卡
-
-2）返回说明
-
-正常时的返回JSON数据包示例：
-
-    {
-        "errcode":0,"errmsg":"用户开卡成功",
-        "orderId":"12345678901234567890",
-        "card":{
-            "accountId":"1234123412341234",
-            "amount":400000,
-            "restAmount":40000,
-            "balance":300000,
-            "totalStages":3,
-            "restStages":3,
-            "returnSum":100000,
-            "startTime":"2015-01-01 00:00:00",
-            "endTime":"2015-05-31 24:00:00",
-            "status":"正常"
-        }
-    }
-
-错误时的JSON数据包示例：
-
-    {
-        "errcode":10000,"errmsg":"用户开卡失败，其它错误"
-    }
-
-参数|必须|说明
-----|----|----
-orderId|是|后台返回的订单号
-accountId|是|分期卡账号
-amount|是|卡面额，单位：分
-restAmount|是|卡剩余面额，单位：分
-balance|是|卡当前可用金额，单位：分
-totalStages|是|分期总数
-restStage|是|剩余分期数
-returnSum|是|分期金额，单位：分
-startTime|是|有效期-开始日期
-endTime|是|有效期-结束日期
-status|是|状态，正常、冻结
-
-
-
-###查询开分期卡结果接口
-
-当开卡出现异常的时候，第三方应用系统可以使用该接口，检查开卡是否成功。
-
-1）请求说明
-
-
-http请求方式: post
-
-    http://IP:PORT/front/oilcard/get?channel=C001
-
-
-POST数据格式：JSON
-
-    {
-        "channelOrderId":"channel1234567890"
-    }
-
-
-参数|必须|说明
-------|------|-------
-channel|是|渠道编码
-channelOrderId|是|需要查询开分期卡结果的渠道订单号，由于系统异常，第三方应用系统可能未接收到我方后台返回的订单号，因此采用第三方订单号查询，因此请第三方系统保证该值得唯一性。
-
-
-2）返回说明
-
-正常时的返回JSON数据包示例：
-
-    {
-        "orderId":"12345678901234567890",
-        "card":{
-            "accountId":"1234123412341234",
-            "amount":400000,
-            "restAmount":40000,
-            "balance":300000,
-            "totalStages":3,
-            "restStages":3,
-            "returnSum":100000,
-            "startTime":"2015-01-01 00:00:00",
-            "endTime":"2015-05-31 24:00:00",
-            "status":"正常"
-        }
-    }
-
-错误时的JSON数据包示例：
-
-    {
-        "errcode":10000,"errmsg":"没有查找到对应的分期卡订单，其它错误"
-    }
-
-参数|必须|说明
-----|----|----
-orderId|是|开卡的订单号
-accountId|是|分期卡卡号
-amount|是|分期卡面额，单位：分
-restAmount|是|分期卡剩余面额，单位：分
-balance|是|分期卡当前可用金额，单位：分
-totalStages|是|分期总数
-restStage|是|剩余分期数
-returnSum|是|分期金额，单位：分
-startTime|是|有效期-开始日期
-endTime|是|有效期-结束日期
-status|是|状态，正常、冻结
-
-##线下系列
+##线下前置接口
 
 ###线下开卡接口
 
@@ -210,6 +31,7 @@ POST数据格式：JSON
         "storeId":"ST01",
         "terminalId":"POS01",
         "batchNo":"1234567",
+        "operatorId":"zhangsan",
         "terminalOrderId":"1234567890",
         "productId":"1010",
         "paySum":100000
@@ -220,10 +42,11 @@ POST数据格式：JSON
 ------|------|-------
 ID|是|开卡人身份证号
 mobileNum|是|开卡人手机号码
-referrer|否|推荐人代码
+referrer|否|推荐人代码,线下营业厅销售人员
 sellerId|是|商户编码
 storeId|是|门店编码
 terminalId|是|终端编码
+operatorId|是|操作员编码
 batchNo|是|批次号
 terminalOrderId|是|终端流水号，非唯一。当出现异常时，可以根据terminalId+ batchNo+ terminalOrderId唯一确定交易订单，进行后续的处理
 productId|是|产品编号，通过产品下载接口获取产品编号
@@ -270,6 +93,78 @@ terminalOrderId|是|终端流水号，非唯一。当出现异常时，可以根
 remark|是|备注
 request|是|原请求报文，用于POSP防止串包
 
+###线下开卡撤销接口
+
+当发生购卡失败或者异常后，调用该接口将已经开卡成功的进行撤销。
+
+1）请求说明
+
+http请求方式: post
+
+    http://IP:PORT/front/offline/repeal_card
+
+
+POST数据格式：JSON
+
+    {
+        "sellerId":"SH01",
+        "storeId":"ST01",
+        "terminalId":"POS01",
+        "batchNo":"1234567",
+        "operatorId":"zhangsan",
+        "terminalOrderId":"1234567890",
+    }
+
+
+参数|必须|说明
+------|------|-------
+sellerId|是|商户编码
+storeId|是|门店编码
+terminalId|是|终端编码
+operatorId|是|操作员编码
+batchNo|是|批次号
+terminalOrderId|是|需要撤销的终端流水号
+
+2）返回说明
+
+正常时的返回JSON数据包示例：
+
+    {
+        "errcode":0,"errmsg":"用户线下开卡撤销成功",
+        "order":{
+            "orderId":"12345678901234567890",
+            "mobileNum":"13912345678", 
+            "sellerId":"SH01",
+            "storeId":"ST01",
+            "terminalId":"POS01",
+            "operatorId":"001",
+            "batchNo":"1234567",
+            "terminalOrderId":"1234567890",
+            "remark":""
+        }
+        "request":"RESQUEST"
+    }
+
+错误时的JSON数据包示例：
+
+    {
+        "errcode":10000,"errmsg":"用户线下开卡撤销失败，其它错误",
+        "request":"RESQUEST"
+    }
+
+
+参数|必须|说明
+----|----|----
+orderId|是|后台返回的订单号
+mobileNum|是|开卡人手机号码
+sellerId|是|商户编码
+storeId|是|是|门店编码
+terminalId|是|终端编码
+operatorId|是|操作员编码
+batchNo|是|批次号
+terminalOrderId|是|终端流水号，非唯一。当出现异常时，可以根据terminalId+ batchNo+ terminalOrderId唯一确定交易订单，进行后续的处理
+remark|是|备注
+request|是|原请求报文，用于POSP防止串包
 
 ###线下支付接口
 
@@ -570,6 +465,7 @@ POST数据格式：JSON
     {
         "query":{
             "consumerId":"13912345678",
+            "paymentCodeDES":"231EEREWQR",
             "sellerId":"GM01",
             "storeId":"ST01",
             "terminalId":"POS12345",
@@ -584,6 +480,7 @@ POST数据格式：JSON
 参数|必须|说明
 ------|------|-------
 consumerId|否|需要查询的消费号码，如果是手机号码，查询该手机号码对应的现金账户余额，如果是卡号，则查询卡号的余额
+paymentCodeDES|是|加密的支付密码
 sellerId|是|商户编码
 storeId|是|门店编码
 terminalId|是|终端编码
@@ -663,18 +560,21 @@ terminalOrderId|是|终端流水号
             {
                 "productId":"1010",
                 "productName":"乐驾包5000", 
+                "productShortName":"乐驾包5000", 
                 "productPrice":450000,
                 "remark":""
             },
             {
                 "productId":"1011",
                 "productName":"乐驾包4000", 
+                "productShortName":"乐驾包5000", 
                 "productPrice":350000,
                 "remark":""
             },
             {
                 "productId":"1012",
                 "productName":"乐驾包2000", 
+                "productShortName":"乐驾包5000", 
                 "productPrice":150000,
                 "remark":""
             }
@@ -687,171 +587,46 @@ terminalOrderId|是|终端流水号
 ----|----|----
 productId|是|产品编号
 productName|是|产品名称
+productShortName|是|产品简称，用于POS等终端展示，长度在6个汉字以内
 productPrice|是|产品价格，单位：分
 remark|是|备注
 request|是|原请求内容，必须和原来请求一样
 
+###线下开卡交割接口
+
+中经汇通的POSP系统在约定的日切时间（该时间双方约定），将日切文件放到FTP服务器上。MAP前置在约定的日切时间+30分钟后，自动登录FTP服务器，并下载日切文件。根据日切文件和线下开卡订单记录，为未开通的卡开通，为拆开支付的订单进行合并，和进行开卡生效，对于无法合并的支付订单记录，交由人工处理。
 
 
-###同步系列接口
+1）访问文件说明
 
-###同步线下支付订单接口
+访问方式: ftp
 
-该接口仅提供给联通优势，将线下支付订单信息同步给联通优势系统。
+    ftp://IP:PORT
 
-1）请求说明
+  用户名和密码由中经汇通公司提供。
 
 
-http请求方式: post
+文件格式：
 
-    http://URL/front/notify/pay
+交易id|卡号|金额|流水号|参考号|商户号|终端号|批次号|交易日期|交易时间|身份证号|手机号|推荐人id|产品编号
 
->note:
->联动优势提供URL地址
-
-POST数据格式：JSON
-
-    {
-        "order":{
-            "orderId":"ud12345678901234567890",
-            "consumerId":"1234123412341234",
-            "sum":5000,
-            "payTime":"2015-01-02 12:12:00",
-            "sellerId":"SH12345",
-            "storeId":"ST12345",
-            "terminalId":"ZJ000001",
-            "operatorId":"zhangsan",
-            "terminalOrderId":"1234567890",
-            "batchNo":"123123123122132",
-            "status":"支付成功"
-        }
-    }
+2020030744015541000101023952001524000539|6225380083477614|0.01|000539|152412390951|307440155410001|01023952|001524|20141211|152412|123456789123456788|15017513750|1234
 
 
 参数|必须|说明
-------|------|-------
-orderId|是|后台返回的交易订单号
-consumerId|是|消费号码
-sum|是|支付金额，单位：分
-payTime|是|交易时间
-status|是|状态
-sellerId|是|商户编码
-storeId|是|门店编码
-terminalId|是|终端编码
-operatorId|是|操作员编码
-batchNo|是|批次号
-terminalOrderId|是|终端流水号
-remark|否|备注
+----|----|----
+交易id|是|支付系统的交易订单号（不用关注）
+卡号|是|支付的卡号（不用关注）
+金额|是|支付金额（元，精确到小数后2位）（关注）
+流水号|是|即terminalOrderId
+参考号|是|（不用关注）
+商户号|是|即sellerId
+终端号|是|即terminalId
+批次号|是|即batchNo
+交易日期|是|（关注）
+交易时间|是|（关注）
+身份证号|是|即ID
+手机号|是|即mobileNum
+推荐人id|是|即referrer(不关注)
+产品编号|是|即productId
 
-
-2）返回说明
-
-正常时的返回JSON数据包示例：
-
-    {
-        "errcode":0, "errmsg":"同步线下支付订单信息成功"   
-    }
-
-错误时的JSON数据包示例：
-
-    {
-        "errcode":10000,"errmsg":"同步线下支付订单信息失败，其它错误"
-    }
-
-
-###同步线下开卡信息接口
-
-该接口仅提供给联通优势，将开卡信息同步给联通优势系统。
-
-1）请求说明
-
-http请求方式: post
-
-    http://URL/front/notify/open_card
-
->note:
->联通优势提供URL地址
-
-POST数据格式：JSON
-
-    {
-        "mobileNum":"13912345678",
-        "sellerId":"SH01",
-        "storeId":"ST01",
-        "terminalId":"POS01",
-        "operatorId":"001"
-        "batchNo":"1234567",
-        "terminalOrderId":"1234567890",
-        "card":{
-            "accountId":"1234123412341234",
-            "amount":400000,
-            "startTime":"2015-01-01 00:00:00",
-            "endTime":"2015-05-31 24:00:00",
-            "status":"正常"
-        }
-    }
-
-
-参数|必须|说明
-------|------|-------
-mobileNum|是|开卡人手机号码
-sellerId|是|商户编码
-storeId|是|是|门店编码
-terminalId|是|终端编码
-operatorId|是|操作员编码
-batchNo|是|批次号
-terminalOrderId|是|终端流水号
-accountId|是|卡号
-amount|是|卡面额，单位：分
-startTime|是|有效期-开始日期
-endTime|是|有效期-结束日期
-status|是|状态，正常、冻结
-
-
-2）返回说明
-
-正常时的返回JSON数据包示例：
-
-    {
-        "errcode":0, "errmsg":"同步线下开卡信息成功"   
-    }
-
-错误时的JSON数据包示例：
-
-    {
-        "errcode":10000,"errmsg":"同步线下开卡信息失败，其它错误"
-    }
-
-
-
-
-
-#对账
-
-##开卡对账
-
-对账文件格式
-
-消费号码|卡号|开户时间|状态
->备注
->状态是0时，代表成功，1时代表失败。
-
-例子
-
-13912345678|1234123412341234|2015-01-01 12:12:00|0
-13912345678|5678567856785678|2015-01-01 12:12:00|1
-
-
-
-##消费对账
-
-对账文件格式
-
-订单号|消费号码|支付金额|交易商户|支付时间|状态
->备注
->状态是0时，代表成功，1时代表失败。
-
-例子
-
-ud1234567890|13912345678|50|SH0001|2015-01-01 12:12:00|0
-UD2345678900|13912345678|60|SH0002|2015-01-01 12:12:00|1
