@@ -197,7 +197,8 @@ POST数据格式：JSON
             "productName":"0号柴油",
             "productPrice":500,
             "productQuantity":"1.55",
-            "remark":""
+            "remark":"",
+            "shiftInfo":"20150708+01"
         }
     }
 
@@ -217,6 +218,7 @@ productName|否|商品编码，比如0号柴油，仅作记录
 productPrice|否|商品价格，比如5.00元/升，仅作记录
 productQuantity|否|商品数量，比如1.55升，仅作记录
 remark|否|备注
+shiftInfo|否|班次信息
 
 2）返回说明
 
@@ -239,6 +241,7 @@ remark|否|备注
             "productPrice":500,
             "productQuantity":"1.55",
             "remark":"",
+            "shiftInfo":"20150708+01",
             "status":"支付成功"
         },
         "request":"RESQUEST"
@@ -268,6 +271,7 @@ productName|否|商品编码，比如0号柴油
 productPrice|否|商品价格，比如5.00元/升
 productQuantity|否|商品数量，比如1.55升
 remark|否|备注
+shiftInfo|否|班次信息
 request|是|原请求报文
 
 ###线下交易撤销接口
